@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: my-web-service
+    buildCommand: |
+      npm install
+      npx playwright install  # Playwrightブラウザのインストール
+    startCommand: npm start  # アプリケーションの起動コマンド
+git add .
