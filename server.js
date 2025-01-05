@@ -1,6 +1,5 @@
 const express = require("express");
-const axios = require("axios");
-const cheerio = require("cheerio");
+const puppeteer = require("puppeteer");
 const cors = require("cors");
 
 const app = express();
@@ -18,38 +17,53 @@ app.get("/fetch-metadata", async (req, res) => {
   }
 
   try {
-    // リンク先のHTMLを取得
-    const response = await axios.get(url);
-    const html = response.data;
+    // Puppeteerを使ってブラウザを起動
+    const browser = await puppeteer.launch({ headless: true }); // headlessモードで起動
+    const page = await browser.newPage();
 
-    // cheerioを使ってHTMLを解析
-    const $ = cheerio.load(html);
+    // 指定されたURLを開く
+    await page.goto(url, { waitUntil: "domcontentloaded" });
 
-    // メタデータを抽出
-    const metadata = {
-      title:
-        $("meta[property='og:title']").attr("content") || $("title").text(),
-      description:
-        $("meta[property='og:description']").attr("content") ||
-        $("meta[name='description']").attr("content"),
-      image: $("meta[property='og:image']").attr("content"),
-      url: ($("meta[property='og:url']").attr("content") || url).trim(),
-    };
+    // メタデータを取得する
+    const metadata = await page.evaluate(() => {
+      const title =
+        document
+          .querySelector("meta[property='og:title']")
+          ?.getAttribute("content") || document.title;
+      const description =
+        document
+          .querySelector("meta[property='og:description']")
+          ?.getAttribute("content") || "";
+      const image =
+        document
+          .querySelector("meta[property='og:image']")
+          ?.getAttribute("content") || "";
+      const pageUrl =
+        document
+          .querySelector("meta[property='og:url']")
+          ?.getAttribute("content") || window.location.href;
 
+      return {
+        title,
+        description,
+        image,
+        url: pageUrl,
+      };
+    });
+
+    // ブラウザを閉じる
+    await browser.close();
+
+    // メタデータをレスポンスとして返す
     res.json(metadata);
   } catch (error) {
     console.error("Error fetching metadata:", error.message);
-    if (error.response) {
-      // サーバーがエラーを返した場合
-      console.error("Response data:", error.response.data);
-      console.error("Response status:", error.response.status);
-    }
     res.status(500).json({ error: "Failed to fetch metadata" });
   }
 });
 
 // サーバーの起動
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
