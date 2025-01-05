@@ -1,5 +1,5 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core"); // puppeteer-coreを使う場合
+const puppeteer = require("puppeteer"); // puppeteer-coreを使う場合
 const cors = require("cors");
 
 const app = express();
