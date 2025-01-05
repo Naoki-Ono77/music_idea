@@ -1,5 +1,5 @@
 const express = require("express");
-const puppeteer = require("puppeteer-core");  // puppeteer-coreを使う場合
+const puppeteer = require("puppeteer-core"); // puppeteer-coreを使う場合
 const cors = require("cors");
 
 const app = express();
@@ -20,7 +20,7 @@ app.get("/fetch-metadata", async (req, res) => {
     // Puppeteerを使ってブラウザを起動
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: '/usr/bin/google-chrome-stable', // Renderのパスを指定
+      executablePath: "/usr/bin/google-chrome", // Renderのパスを指定
     });
     const page = await browser.newPage();
 
