@@ -21,7 +21,7 @@ app.get("/fetch-youtube-metadata", async (req, res) => {
   }
 
   const videoId = videoIdMatch[1];
-  const apiKey = "AIzaSyCUvpBCi5gicDMKfpigcxLjquJLk62YRU4"; // YouTube Data APIキーをここに入力
+  const apiKey = process.env.YOUTUBE_API_KEY; // YouTube Data APIキーをここに入力
 
   try {
     const response = await axios.get(`https://www.googleapis.com/youtube/v3/videos`, {
