@@ -19,12 +19,7 @@ app.get("/fetch-metadata", async (req, res) => {
 
   try {
     // リンク先のHTMLを取得
-    const response = await axios.get(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
-    });
+    const response = await axios.get(url);
     const html = response.data;
 
     // cheerioを使ってHTMLを解析
@@ -38,12 +33,17 @@ app.get("/fetch-metadata", async (req, res) => {
         $("meta[property='og:description']").attr("content") ||
         $("meta[name='description']").attr("content"),
       image: $("meta[property='og:image']").attr("content"),
-      url: $("meta[property='og:url']").attr("content") || url,
+      url: ($("meta[property='og:url']").attr("content") || url).trim(),
     };
 
     res.json(metadata);
   } catch (error) {
     console.error("Error fetching metadata:", error.message);
+    if (error.response) {
+      // サーバーがエラーを返した場合
+      console.error("Response data:", error.response.data);
+      console.error("Response status:", error.response.status);
+    }
     res.status(500).json({ error: "Failed to fetch metadata" });
   }
 });
