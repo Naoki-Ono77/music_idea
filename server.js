@@ -1,6 +1,5 @@
 const express = require("express");
-const axios = require("axios");  // axiosを使う
-const cheerio = require("cheerio"); // cheerioを使ってHTMLをパース
+const { chromium } = require("playwright"); // Playwrightのインポート
 const cors = require("cors");
 
 const app = express();
@@ -18,29 +17,31 @@ app.get("/fetch-metadata", async (req, res) => {
   }
 
   try {
-    // HTTPリクエストでURLのHTMLを取得
-    const { data } = await axios.get(url);
+    // Playwrightでブラウザを起動
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
 
-    // cheerioでHTMLをパース
-    const $ = cheerio.load(data);
+    // 指定されたURLを開く
+    await page.goto(url, { waitUntil: "domcontentloaded" });
 
     // メタデータを取得
-    const title =
-      $("meta[property='og:title']").attr("content") || $("title").text();
-    const description =
-      $("meta[property='og:description']").attr("content") || "";
-    const image = $("meta[property='og:image']").attr("content") || "";
-    const pageUrl =
-      $("meta[property='og:url']").attr("content") || url;
+    const metadata = await page.evaluate(() => {
+      const title =
+        document.querySelector("meta[property='og:title']")?.content || document.title;
+      const description =
+        document.querySelector("meta[property='og:description']")?.content || "";
+      const image =
+        document.querySelector("meta[property='og:image']")?.content || "";
+      const pageUrl =
+        document.querySelector("meta[property='og:url']")?.content || window.location.href;
 
-    // メタデータを返す
-    const metadata = {
-      title,
-      description,
-      image,
-      url: pageUrl,
-    };
+      return { title, description, image, url: pageUrl };
+    });
 
+    // ブラウザを閉じる
+    await browser.close();
+
+    // メタデータをレスポンスとして返す
     res.json(metadata);
   } catch (error) {
     console.error("Error fetching metadata:", error.message);
