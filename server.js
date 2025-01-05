@@ -1,5 +1,6 @@
 const express = require("express");
-const puppeteer = require("puppeteer"); // puppeteer-coreを使う場合
+const axios = require("axios");  // axiosを使う
+const cheerio = require("cheerio"); // cheerioを使ってHTMLをパース
 const cors = require("cors");
 
 const app = express();
@@ -17,47 +18,29 @@ app.get("/fetch-metadata", async (req, res) => {
   }
 
   try {
-    // Puppeteerを使ってブラウザを起動
-    const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe', // ダブルクォーテーションは使用しない
-    });
-    const page = await browser.newPage();
+    // HTTPリクエストでURLのHTMLを取得
+    const { data } = await axios.get(url);
 
-    // 指定されたURLを開く
-    await page.goto(url, { waitUntil: "domcontentloaded" });
+    // cheerioでHTMLをパース
+    const $ = cheerio.load(data);
 
-    // メタデータを取得する
-    const metadata = await page.evaluate(() => {
-      const title =
-        document
-          .querySelector("meta[property='og:title']")
-          ?.getAttribute("content") || document.title;
-      const description =
-        document
-          .querySelector("meta[property='og:description']")
-          ?.getAttribute("content") || "";
-      const image =
-        document
-          .querySelector("meta[property='og:image']")
-          ?.getAttribute("content") || "";
-      const pageUrl =
-        document
-          .querySelector("meta[property='og:url']")
-          ?.getAttribute("content") || window.location.href;
+    // メタデータを取得
+    const title =
+      $("meta[property='og:title']").attr("content") || $("title").text();
+    const description =
+      $("meta[property='og:description']").attr("content") || "";
+    const image = $("meta[property='og:image']").attr("content") || "";
+    const pageUrl =
+      $("meta[property='og:url']").attr("content") || url;
 
-      return {
-        title,
-        description,
-        image,
-        url: pageUrl,
-      };
-    });
+    // メタデータを返す
+    const metadata = {
+      title,
+      description,
+      image,
+      url: pageUrl,
+    };
 
-    // ブラウザを閉じる
-    await browser.close();
-
-    // メタデータをレスポンスとして返す
     res.json(metadata);
   } catch (error) {
     console.error("Error fetching metadata:", error.message);
