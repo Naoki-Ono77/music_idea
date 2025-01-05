@@ -20,7 +20,7 @@ app.get("/fetch-metadata", async (req, res) => {
     // Puppeteerを使ってブラウザを起動
     const browser = await puppeteer.launch({
       headless: true,
-      executablePath: '"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"', // ダブルクォーテーションで囲んでみる
+      executablePath: 'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe', // ダブルクォーテーションは使用しない
     });
     const page = await browser.newPage();
 
