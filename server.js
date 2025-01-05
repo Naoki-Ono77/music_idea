@@ -18,25 +18,33 @@ app.get("/fetch-metadata", async (req, res) => {
   }
 
   try {
+    console.log("Launching browser...");
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
+    console.log("Navigating to:", url);
     await page.goto(url, { waitUntil: "domcontentloaded" });
+
     const metadata = await page.evaluate(() => {
+      console.log("Extracting metadata...");
       const title = document.querySelector("meta[property='og:title']")?.content || document.title;
       const description = document.querySelector("meta[property='og:description']")?.content ||
         document.querySelector("meta[name='description']")?.content;
       const image = document.querySelector("meta[property='og:image']")?.content;
       const url = document.querySelector("meta[property='og:url']")?.content || window.location.href;
 
+      console.log("Extracted metadata:", { title, description, image, url });
       return { title, description, image, url };
     });
+
     await browser.close();
+    console.log("Metadata fetched:", metadata);
     res.json(metadata);
   } catch (error) {
     console.error("Error fetching metadata:", error);
     res.status(500).json({ error: "Failed to fetch metadata" });
   }
 });
+
 
 
 // サーバーの起動
